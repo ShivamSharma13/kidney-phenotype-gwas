@@ -1,6 +1,6 @@
 version 1.0
  
-
+## Define the workflow process.
 workflow process_acaf {
     input {
         File acaf_bgen_file_list
@@ -44,7 +44,8 @@ workflow process_acaf {
         step0_sparse_grm_file: {localization_optional: true}
         step0_sparse_grm_sample_file: {localization_optional: true}
     }
- 
+    
+    # Parallelize over 22 chromosomes.
     scatter (idx in range(length(acaf_bgen_files))) {
         call downsample {
             input:
@@ -58,6 +59,7 @@ workflow process_acaf {
                 step0_sparse_grm_file = step0_sparse_grm_file,
                 step0_sparse_grm_sample_file = step0_sparse_grm_sample_file,
 
+                # Custom space and memory.
                 space = spaces[idx],
                 core = cores[idx],
                 memory = memorys[idx],
@@ -70,7 +72,8 @@ workflow process_acaf {
     }
 }
  
-task downsample {
+# Define the workflow task for GWAS step 2.
+task gwas_step_2 {
     input{
         File bgen_file
         File sample_file
@@ -92,7 +95,8 @@ task downsample {
         String chromosome
 
     }
- 
+    
+    # Make output directories and run GWAS.
     command <<<
         set -e
         echo "Working on "
@@ -125,6 +129,7 @@ task downsample {
     
     >>>
     
+    # Save QCed files.
     output{
         File qced_bgen = "Plink/~{output_prefix}.ACAF.QC.bgen"
         File qced_sample = "Plink/~{output_prefix}.ACAF.QC.sample"
@@ -140,7 +145,8 @@ task downsample {
 
         
     }
- 
+    
+    # Use custom docker image.
     runtime {
         docker:"gcr.io/docker-to-gcr-saige/lonely_grass:v4"
         memory: memory+"GB"
